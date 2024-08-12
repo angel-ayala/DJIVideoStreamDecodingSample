@@ -28,20 +28,22 @@
         android:required="true"/>
 
     <application
-        android:name=".VideoDecodingApplication"
+        android:name="com.dji.videostreamdecodingsample.VideoDecodingApplication"
         android:allowBackup="true"
         android:label="@string/app_name_decoding_sample"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true">
 
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
 
         <meta-data
             android:name="com.dji.sdk.API_KEY"
-            android:value="Please enter your App Key here."/>
+            android:value="905709c6aeadb41a633247c0"/>
 
         <activity
-            android:name=".ConnectionActivity"
+            android:name="com.dji.videostreamdecodingsample.ConnectionActivity"
+            android:exported="true"
             android:launchMode="singleTop"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -53,7 +55,7 @@
                 android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
                 android:resource="@xml/accessory_filter"/>
         </activity>
-        <activity android:name=".MainActivity"
+        <activity android:name="com.dji.videostreamdecodingsample.MainActivity"
             android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"></activity>

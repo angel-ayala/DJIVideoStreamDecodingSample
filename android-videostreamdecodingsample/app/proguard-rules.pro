@@ -113,3 +113,7 @@
 -keep class android.arch.** { *; }
 -dontwarn android.arch.**
 -ignorewarnings
+
+# Keep WebRTC classes
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**

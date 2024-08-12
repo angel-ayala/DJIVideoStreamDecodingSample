@@ -22,6 +22,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dji.videostreamdecodingsample.WebRTC.DJIStreamer;
+import com.dji.videostreamdecodingsample.WebRTC.websocket.OnStateChangeListener;
+import com.dji.videostreamdecodingsample.WebRTC.websocket.Socket;
+import com.dji.videostreamdecodingsample.WebRTC.websocket.SocketBuilder;
+import com.dji.videostreamdecodingsample.WebRTC.websocket.SocketState;
 import com.dji.videostreamdecodingsample.media.DJIVideoStreamDecoder;
 import com.dji.videostreamdecodingsample.media.NativeHelper;
 
@@ -31,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 import dji.common.airlink.PhysicalSource;
 import dji.common.camera.SettingsDefinitions;
@@ -50,9 +56,45 @@ public class MainActivity extends Activity implements DJICodecManager.YuvDataCal
     private static final int MSG_WHAT_SHOW_TOAST = 0;
     private static final int MSG_WHAT_UPDATE_TITLE = 1;
     private SurfaceHolder.Callback surfaceCallback;
-    private enum DemoType { USE_TEXTURE_VIEW, USE_SURFACE_VIEW, USE_SURFACE_VIEW_DEMO_DECODER}
-    private static DemoType demoType = DemoType.USE_TEXTURE_VIEW;
+    private enum DemoType { USE_TEXTURE_VIEW, USE_SURFACE_VIEW, USE_SURFACE_VIEW_DEMO_DECODER, NONE }
+    private static DemoType demoType = DemoType.NONE;
     private VideoFeeder.VideoFeed standardVideoFeeder;
+
+    // Websocket
+    private final String WEBSOCKET_URL = "ws://192.168.1.220:8090";
+    private DJIStreamer djiStreamer;
+    private Socket mSocket;
+
+    private void initWebSocket(){
+        // init websocket
+        mSocket = SocketBuilder.with(WEBSOCKET_URL)
+                .setPingInterval(5, TimeUnit.SECONDS).build();
+
+        // add ws states listeners
+        mSocket.addOnChangeStateListener(new OnStateChangeListener() {
+            // Socket connection events
+            @Override
+            public void onChange(SocketState status) {
+                switch (status) {
+                    case OPEN:
+                        // new OnlineEvent();
+                        break;
+                    case CLOSING: case CLOSED: case RECONNECTING:
+                    case RECONNECT_ATTEMPT: case CONNECT_ERROR:
+                        // new OfflineEvent();
+                        break;
+                }
+            }
+            @Override
+            public void onClosed(int code, String reason) {
+                // socket should be always connected
+                // Even it's closed, open the connection again
+                mSocket.connect();
+            }
+        });
+        mSocket.connect();
+        djiStreamer = new DJIStreamer(this, DJISDKManager.getInstance().getProduct().getModel());
+    }
 
 
     protected VideoFeeder.VideoDataListener mReceivedVideoDataListener = null;
@@ -136,6 +178,7 @@ public class MainActivity extends Activity implements DJICodecManager.YuvDataCal
             mCodecManager.destroyCodec();
         }
         super.onDestroy();
+        mSocket.terminate();
     }
 
     @Override
@@ -158,6 +201,7 @@ public class MainActivity extends Activity implements DJICodecManager.YuvDataCal
                 }
             });
         }
+        initWebSocket();
     }
 
     public static boolean isM300Product() {
@@ -301,14 +345,14 @@ public class MainActivity extends Activity implements DJICodecManager.YuvDataCal
 
                 //When calibration is needed or the fetch key frame is required by SDK, should use the provideTranscodedVideoFeed
                 //to receive the transcoded video feed from main camera.
-                if (demoType == DemoType.USE_SURFACE_VIEW_DEMO_DECODER && isTranscodedVideoFeedNeeded()) {
-                    standardVideoFeeder = VideoFeeder.getInstance().provideTranscodedVideoFeed();
-                    standardVideoFeeder.addVideoDataListener(mReceivedVideoDataListener);
-                    return;
-                }
-                if (VideoFeeder.getInstance().getPrimaryVideoFeed() != null) {
-                    VideoFeeder.getInstance().getPrimaryVideoFeed().addVideoDataListener(mReceivedVideoDataListener);
-                }
+//                if (demoType == DemoType.USE_SURFACE_VIEW_DEMO_DECODER && isTranscodedVideoFeedNeeded()) {
+//                    standardVideoFeeder = VideoFeeder.getInstance().provideTranscodedVideoFeed();
+//                    standardVideoFeeder.addVideoDataListener(mReceivedVideoDataListener);
+//                    return;
+//                }
+//                if (VideoFeeder.getInstance().getPrimaryVideoFeed() != null) {
+//                    VideoFeeder.getInstance().getPrimaryVideoFeed().addVideoDataListener(mReceivedVideoDataListener);
+//                }
 
             }
         }
